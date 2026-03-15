@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+# vim: ft=sh ts=4 sw=4 noet
+
+# This script manages the system-wide local installation of nerdfonts on
+# generic linux distributions.
+#
+# Features:
+#	- Autodownload if font archive is not available locally
+#	- Storing of downloaded archives for later use
+#	- Easy management of nerdfont installation
+#
+# Usage: setup <install|uninstall|list> [fonts]
+#
+# install: Installs fonts to /usr/local hierarchy
+# uninstall: Removes fonts installed with this script
+# list: Lists available nerdfonts
+#
+# Author: Fabian Kinzer <bashnix@mailbox.org>
+# License: MIT
+
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+VERSION="v3.4.0"
+SRC_BASE_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/$VERSION"
+SRC_DIR="./fonts/$VERSION"
+BASE_PATH="/usr/local/share"
+FONT_PATH="$BASE_PATH/fonts/nerdfont"
+LICENSE_PATH="$BASE_PATH/licenses/nerdfont"
+DOC_PATH="$BASE_PATH/doc/nerdfont"
+
+FONTS_AVAILABLE=(
+	"0xProto"
+	"3270"
+	"AdwaitaMono"
+	"Agave"
+	"AnonymousPro"
+	"Arimo"
+	"AtkinsonHyperlegibleMono"
+	"AurulentSansMono"
+	"BigBlueTerminal"
+	"BitstreamVeraSansMono"
+	"CascadiaCode"
+	"CascadiaMono"
+	"CodeNewRoman"
+	"ComicShannsMono"
+	"CommitMono"
+	"Cousine"
+	"D2Coding"
+	"DaddyTimeMono"
+	"DejaVuSansMono"
+	"DepartureMono"
+	"DroidSansMono"
+	"EnvyCodeR"
+	"FantasqueSansMono"
+	"FiraCode"
+	"FiraMono"
+	"GeistMono"
+	"Go-Mono"
+	"Gohu"
+	"Hack"
+	"Hasklig"
+	"HeavyData"
+	"Hermit"
+	"iA-Writer"
+	"IBMPlexMono"
+	"Inconsolata"
+	"InconsolataGo"
+	"InconsolataLGC"
+	"IntelOneMono"
+	"Iosevka"
+	"IosevkaTerm"
+	"IosevkaTermSlab"
+	"JetBrainsMono"
+	"Lekton"
+	"LiberationMono"
+	"Lilex"
+	"MartianMono"
+	"Meslo"
+	"Monaspace"
+	"Monofur"
+	"Monoid"
+	"Mononoki"
+	"MPlus"
+	"NerdFontsSymbolsOnly"
+	"Noto"
+	"OpenDyslexic"
+	"Overpass"
+	"ProFont"
+	"ProggyClean"
+	"Recursive"
+	"RobotoMono"
+	"ShareTechMono"
+	"SourceCodePro"
+	"SpaceMono"
+	"Terminus"
+	"Tinos"
+	"Ubuntu"
+	"UbuntuMono"
+	"UbuntuSans"
+	"VictorMono"
+	"ZedMono"
+)
+
+function die {
+    printf "\e[31m[ERROR] %s\e[0m\n" "$*" >&2
+    exit 1
+}
+
+function warn {
+	printf "\e[33m[WARN] %s\e[0m\n" "$*" >&2
+}
+
+function info {
+	printf "\e[32m[INFO] %s\e[0m\n" "$*" >&2
+}
+
+function require_cmd {
+	command -v "$1" &> /dev/null || die "'$1' is required but could not be found in PATH"
+}
+
+function usage {
+	cat <<- E0F
+		Usage: $0 <install|uninstall|list> [fonts]
+
+		install: Installs font to $BASE_PATH
+		uninstall: Removes font from $BASE_PATH
+		list: Lists available fonts
+	E0F
+	exit 1
+}
+
+function download {
+	local font="$1"
+	[[ -d $SRC_DIR ]] || mkdir -p "$SRC_DIR"
+	info "Downloading $font"
+	curl --connect-timeout 60 -sSL "$SRC_BASE_URL/$font.tar.xz" -o "$SRC_DIR/$font.tar.xz"\
+		|| die "Failed to download $font"
+	info "Download complete!"
+}
+
+
+function install_font {
+	local font="$1"
+	local archive="$SRC_DIR/$1.tar.xz"
+	local tempdir="$(mktemp -d)" || die "Could not create temporary directory."
+
+	trap 'rm -rf "$tempdir"' RETURN
+
+	[[ -f $archive ]] || download "$font"
+
+	info "Installing $font"
+
+	info "Extracting archive..."
+	tar -xf "$archive" -C "$tempdir" > /dev/null || die "Failed to extract archive."
+
+
+	info "Installing files..."
+	for file in "$tempdir"/*; do
+		case "${file##*/}" in
+			*.otf|*.ttf|*.OTF|*.TTF)
+				install -Dm 0644 "$file" "$FONT_PATH/$font/${file##*/}"
+				;;
+			[Rr][Ee][Aa][Dd][Mm][Ee]*) # Readme
+				install -Dm 0644 "$file" "$DOC_PATH/$font/${file##*/}"
+				;;
+			[Ll][Ii][Cc][Ee][Nn][Ss][Ee]*)
+				install -Dm 0644 "$file" "$LICENSE_PATH/$font/${file##*/}"
+				;;
+			*)
+				warn "File $file from $font matched no install pattern."\
+					 "I don't know what to do with it! Placing it in"\
+					 "$SCRIPT_DIR/failed_install/$font/${file##*/}"
+				install -Dm 0644 "$file" "$SCRIPT_DIR/failed_install/$font/${file##*/}"
+				;;
+		esac
+	done
+
+
+	info "Successfully installed $font!"
+}
+
+function uninstall {
+	local font="$1"
+
+	info "Uninstalling $font"
+
+	rm -rf "$FONT_PATH/$font" "$DOC_PATH/$font" "$LICENSE_PATH/$font"
+	compgen -G "$FONT_PATH/*" > /dev/null || rm -d "$FONT_PATH"\
+		|| die "Could not remove $FONT_PATH"
+	compgen -G "$DOC_PATH/*" > /dev/null || rm -d "$DOC_PATH"\
+		|| die "Could not remove $DOC_PATH"
+	compgen -G "$LICENSE_PATH/*" > /dev/null || rm -d "$LICENSE_PATH"\
+	   	|| die "Could not remove $LICENSE_PATH"
+
+	info "Successfully uninstalled $font"
+}
+
+function rebuild_font_cache {
+	info "Rebuilding font cache"
+	fc-cache -f "$FONT_PATH" || die "Could not rebuild font cache"
+	info "Complete!"
+}
+
+function font_exists {
+	local needle="$1"
+	for f in "${FONTS_AVAILABLE[@]}"; do
+	   [[ "$f" == "$needle" ]] && return 0
+	done
+	return 1
+}
+
+
+# ───────────────────────────────────────  
+# Start
+# ───────────────────────────────────────
+
+# Check if args
+[[ $# -gt 0 ]] || usage
+
+# Check if root
+[[ $EUID -eq 0 ]] || die "You must be root to use this!"
+
+# Check for required dependencies
+require_cmd "curl"
+require_cmd "tar"
+require_cmd "xz"
+require_cmd "fc-cache"
+require_cmd "install"
+
+# Parse args
+cmd="$1"
+shift
+fonts=("$@")
+
+for font in "${fonts[@]}"; do
+	font_exists "$font" || die "Font $font is not supported. May its a typo?"
+done
+
+case $cmd in
+	install)
+		[[ ${#fonts[@]} -gt 0 ]] || die "No font specified for installation"
+		for font in "${fonts[@]}"; do
+			install_font "$font"
+		done
+		rebuild_font_cache
+		;;
+	uninstall)
+		[[ ${#fonts[@]} -gt 0 ]] || die "No font specified for uninstallation"
+		for font in "${fonts[@]}"; do
+			uninstall "$font"
+		done
+		rebuild_font_cache
+		;;
+	list)
+		echo "Available Fonts:"
+		for font in "${FONTS_AVAILABLE[@]}"; do
+			echo "$font"
+		done
+		;;
+	*)
+		echo "Unknown command: $cmd"
+		usage
+		;;
+esac
+
