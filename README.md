@@ -8,25 +8,34 @@ Usage
 
 1. Clone this repository
 
-    git clone __to be done __
-    cd nerdfont_setup
+```
+git clone https://github.com/bashnix/nerdfont_setup.git
+cd nerdfont_setup
+```
 
 2. Set execute bit on setup script
 
-    chmod +x setup
+```
+chmod +x setup
+```
 
 3. List available fonts with
 
-    sudo ./setup list
+```
+sudo ./setup list
+```
 
 4. Install fonts with
 
-    sudo ./setup install ExampleFont1 ExampleFont2
+```
+sudo ./setup install ExampleFont1 ExampleFont2
+```
 
 5. If you want to uninstall later, use
 
-    sudo ./setup uninstall ExampleFont1 ExampleFont2
-
+```
+sudo ./setup uninstall ExampleFont1 ExampleFont2
+```
 
 Special Thanks
 -----------------
