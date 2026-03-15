@@ -146,7 +146,8 @@ function download {
 function install_font {
 	local font="$1"
 	local archive="$SRC_DIR/$1.tar.xz"
-	local tempdir="$(mktemp -d)" || die "Could not create temporary directory."
+	local tempdir
+	tempdir="$(mktemp -d)" || die "Could not create temporary directory."
 
 	trap 'rm -rf "$tempdir"' RETURN
 
