@@ -31,6 +31,11 @@ FONT_PATH="$BASE_PATH/fonts/nerdfont"
 LICENSE_PATH="$BASE_PATH/licenses/nerdfont"
 DOC_PATH="$BASE_PATH/doc/nerdfont"
 
+RED=$'\033[31m'
+GREEN=$'\033[32m'
+YELLOW=$'\033[33m'
+NC=$'\033[0m'
+
 FONTS_AVAILABLE=(
 	"0xProto"
 	"3270"
@@ -213,6 +218,17 @@ function font_exists {
 	return 1
 }
 
+function print_license_hint {
+	cat <<- E0F
+		${RED}-------------------------------------------------------------
+		Setup complete. With the use of these fonts you accept each
+		of their own licenses which I have conveniently placed at
+		$LICENSE_PATH.${GREEN}
+		
+		Thank you for using nerdfont setup!${NC}
+		E0F
+}
+
 
 # ───────────────────────────────────────  
 # Start
@@ -247,6 +263,7 @@ case $cmd in
 			install_font "$font"
 		done
 		rebuild_font_cache
+		print_license_hint
 		;;
 	uninstall)
 		[[ ${#fonts[@]} -gt 0 ]] || die "No font specified for uninstallation"
