@@ -32,6 +32,7 @@ BASE_PATH="/usr/local/share"
 FONT_PATH="$BASE_PATH/fonts/nerdfont"
 LICENSE_PATH="$BASE_PATH/licenses/nerdfont"
 DOC_PATH="$BASE_PATH/doc/nerdfont"
+FONTCONFIG_PATH="$BASE_PATH/fontconfig/conf.avail"
 
 RED=$'\033[31m'
 GREEN=$'\033[32m'
@@ -174,8 +175,19 @@ function install_font {
 			[Rr][Ee][Aa][Dd][Mm][Ee]*) # Readme
 				install -Dm 0644 "$file" "$DOC_PATH/$font/${file##*/}"
 				;;
-			[Ll][Ii][Cc][Ee][Nn][Ss][Ee]*)
+			*[Ll][Ii][Cc][Ee][Nn][SsCc][Ee]*|OFL.txt) # License
 				install -Dm 0644 "$file" "$LICENSE_PATH/$font/${file##*/}"
+				;;
+			10-nerd-font-symbols.conf)
+				install -Dm 0644 "$file" "$FONTCONFIG_PATH/${file##*/}"
+				echo -e "${YELLOW}$font ships it's own config file ${file##*/}."
+				echo -en "Do you want to activate it? (Y):${NC} "
+				read choice
+				if [[ "$choice" == Y ]]; then
+					info "Linking config file"
+					ln -s "$FONTCONFIG_PATH/${file##*/}" "/etc/fonts/conf.d/${file##*/}"\
+						|| die "Could not link config file. Aborting."
+				fi
 				;;
 			*)
 				warn "File $file from $font matched no install pattern."\
@@ -290,4 +302,3 @@ case $cmd in
 		usage
 		;;
 esac
-
