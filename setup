@@ -215,6 +215,13 @@ function uninstall {
 	compgen -G "$LICENSE_PATH/*" > /dev/null || rm -d "$LICENSE_PATH"\
 	   	|| die "Could not remove $LICENSE_PATH"
 
+	if [[ "$font" == "NerdFontsSymbolsOnly" ]]; then
+		[[ -L /etc/fonts/conf.d/10-nerd-font-symbols.conf ]]\
+			&& rm /etc/fonts/conf.d/10-nerd-font-symbols.conf
+		rm "$FONTCONFIG_PATH/10-nerd-font-symbols.conf" &> /dev/null || true
+		rm -d "$FONTCONFIG_PATH" &> /dev/null || true
+	fi
+
 	info "Successfully uninstalled $font"
 }
 
