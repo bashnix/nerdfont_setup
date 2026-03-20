@@ -9,11 +9,13 @@
 #	- Storing of downloaded archives for later use
 #	- Easy management of nerdfont installation
 #
-# Usage: setup <install|uninstall|list> [fonts]
+# Usage: setup <install|uninstall|list> [--all|fonts]
 #
 # install: Installs fonts to /usr/local hierarchy
 # uninstall: Removes fonts installed with this script
 # list: Lists available nerdfonts
+#
+# You can install all fonts at once with ./setup install --all
 #
 # Author: Fabian Kinzer <bashnix@mailbox.org>
 # License: MIT
@@ -128,7 +130,7 @@ function require_cmd {
 
 function usage {
 	cat <<- E0F
-		Usage: $0 <install|uninstall|list> [fonts]
+		Usage: $0 <install|uninstall|list> [--all|fonts]
 
 		install: Installs font to $BASE_PATH
 		uninstall: Removes font from $BASE_PATH
@@ -250,7 +252,7 @@ require_cmd "install"
 # Parse args
 cmd="$1"
 shift
-fonts=("$@")
+[[ "$1" == "--all" ]] && fonts=("${FONTS_AVAILABLE[@]}") || fonts=("$@")
 
 for font in "${fonts[@]}"; do
 	font_exists "$font" || die "Font $font is not supported. May its a typo?"
