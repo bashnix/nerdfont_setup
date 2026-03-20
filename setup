@@ -271,11 +271,14 @@ require_cmd "install"
 # Parse args
 cmd="$1"
 shift
-[[ "$1" == "--all" ]] && fonts=("${FONTS_AVAILABLE[@]}") || fonts=("$@")
+	
+if [[ "$cmd" != "list" ]]; then
+	[[ "$1" == "--all" ]] && fonts=("${FONTS_AVAILABLE[@]}") || fonts=("$@")
+	for	font in "${fonts[@]}"; do
+		font_exists "$font" || die "Font $font is not supported. May its a typo?"
+	done
+fi
 
-for font in "${fonts[@]}"; do
-	font_exists "$font" || die "Font $font is not supported. May its a typo?"
-done
 
 case $cmd in
 	install)
